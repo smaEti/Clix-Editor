@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-
+#define CTRL_KEY(k) ((k) & 0x1f)
 //keeping the original termios struct for reseting the changes of terminal when program exits.
 struct termios original_termios;
 
@@ -62,22 +62,38 @@ void enableRawMode(){
     // -be written to the terminal,and also discards any input that hasn't been read. 
     if(tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw) == -1) die("tcsetattr");
 }
+/*
+its a function on the high level of the program for reading the keyPasses*/
+char editorReadKey(){
+    int nread;
+    char c;
 
+    while(( nread = read(STDIN_FILENO , &c, 1)) != 1){
+        if (nread == -1 && errno != EAGAIN) die("read");
+    }
+
+    return c;
+}
+/*
+this function processes that if the entered key is a CTRL key or is a regular one (idk what to write)
+and executes the process of it . 
+*/
+void editorProcessKeypress(){
+    char c = editorReadKey();
+
+    switch(c){
+        case CTRL_KEY('q'):
+            exit(0);
+            break;
+
+    }
+}
 int main(){
     enableRawMode();
 
     while (1)
     {
-        char c = '\0';
-
-        if(read(STDIN_FILENO,&c,1) == -1 && errno != EAGAIN) die("read");
-
-        if(iscntrl(c)){
-            printf("%d\r\n",c);
-        }else{
-            printf("%d ('%c') \r\n",c,c);
-        }
-        if(c == 'q') break;
+        editorProcessKeypress();
     }
     return 0;
 }
