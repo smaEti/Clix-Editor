@@ -11,6 +11,11 @@ struct termios original_termios;
 
 
 void die(const char *s){
+    //the 4 means we want to write 4 bytes.
+    //\x1b is an escape character and command J is for Erase In display
+    write(STDOUT_FILENO,"\x1b[2J",4);
+    // H is for cursor position
+    write(STDOUT_FILENO,"\x1b[H",3);
     perror(s);
     exit(1);
 }
@@ -92,6 +97,11 @@ void editorProcessKeypress(){
 
     switch(c){
         case CTRL_KEY('q'):
+            //the 4 means we want to write 4 bytes.
+            //\x1b is an escape character and command J is for Erase In display
+            write(STDOUT_FILENO,"\x1b[2J",4);
+            // H is for cursor position
+            write(STDOUT_FILENO,"\x1b[H",3);
             exit(0);
             break;
 
