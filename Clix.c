@@ -74,6 +74,13 @@ char editorReadKey(){
 
     return c;
 }
+//clears the whole screen (terminal)
+void editorRefreshScreen(){
+    //the 4 means we want to write 4 bytes.
+    //\x1b is an escape character and command J is for Erase In display
+    write(STDIN_FILENO,"\x1b[2J",4);
+}
+
 /*
 this function processes that if the entered key is a CTRL key or is a regular one (idk what to write)
 and executes the process of it . 
@@ -93,6 +100,7 @@ int main(){
 
     while (1)
     {
+        editorRefreshScreen();
         editorProcessKeypress();
     }
     return 0;
