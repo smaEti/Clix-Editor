@@ -78,7 +78,9 @@ char editorReadKey(){
 void editorRefreshScreen(){
     //the 4 means we want to write 4 bytes.
     //\x1b is an escape character and command J is for Erase In display
-    write(STDIN_FILENO,"\x1b[2J",4);
+    write(STDOUT_FILENO,"\x1b[2J",4);
+    // H is for cursor position
+    write(STDOUT_FILENO,"\x1b[H",3);
 }
 
 /*
