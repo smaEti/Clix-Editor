@@ -5,7 +5,9 @@
 #include <ctype.h>
 #include <errno.h>
 
+//returns the ACII code for the combination of the given charachter and the CTRL
 #define CTRL_KEY(k) ((k) & 0x1f)
+
 //keeping the original termios struct for reseting the changes of terminal when program exits.
 struct termios original_termios;
 
@@ -73,12 +75,20 @@ char editorReadKey(){
     int nread;
     char c;
 
-    while(( nread = read(STDIN_FILENO , &c, 1)) != 1){
+    while(( nread = read(STDIN_FILENO , &c, 1)) != 1){ 
         if (nread == -1 && errno != EAGAIN) die("read");
     }
 
     return c;
 }
+
+void editorDrawRows() {
+  int y;
+  for (y = 0; y < 24; y++) {
+    write(STDOUT_FILENO, "~\r\n", 3);
+  }
+}
+
 //clears the whole screen (terminal)
 void editorRefreshScreen(){
     //the 4 means we want to write 4 bytes.
@@ -86,6 +96,10 @@ void editorRefreshScreen(){
     write(STDOUT_FILENO,"\x1b[2J",4);
     // H is for cursor position
     write(STDOUT_FILENO,"\x1b[H",3);
+
+    editorDrawRows();
+    
+    write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 /*
