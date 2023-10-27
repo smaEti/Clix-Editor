@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <ctype.h>
 #include <errno.h>
@@ -9,8 +10,14 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 //keeping the original termios struct for reseting the changes of terminal when program exits.
-struct termios original_termios;
+struct editorConfig
+{
+    int screenrows;
+    int screencols;
+    struct termios original_termios;
+};
 
+struct editorConfig E;
 
 void die(const char *s){
     //the 4 means we want to write 4 bytes.
@@ -26,7 +33,7 @@ void die(const char *s){
     disbales the changes of enableRawMode function(sets the attributes to the original_termios).
 */
 void disableRawMode(){
-    if(tcsetattr(STDIN_FILENO,TCSAFLUSH,&original_termios) == -1)
+    if(tcsetattr(STDIN_FILENO,TCSAFLUSH,&E.original_termios) == -1)
     die("tcsetattr");
 }
 
@@ -36,12 +43,12 @@ this function turns off the echoing mode and cannonical mode and some keys funct
 void enableRawMode(){
 
     //getting the terminal attributes and keeping it in raw struct
-    if(tcgetattr(STDIN_FILENO,&original_termios) == -1) die("tcgetattr");
+    if(tcgetattr(STDIN_FILENO,&E.original_termios) == -1) die("tcgetattr");
 
     //runnig the disableRawMode function in exit
     atexit(disableRawMode);
 
-    struct termios raw = original_termios;
+    struct termios raw = E.original_termios;
 
     //turning off the ECHO mode (basicly after this line of code your terminal does not show you what you write)
     //turning off the canonical mode (now terminal will be reading input byte-by-byte,instead of line-by-line)
@@ -82,12 +89,40 @@ char editorReadKey(){
     return c;
 }
 
+int getWindowSize(int *rows,int *cols){
+    struct winsize ws;
+
+    if (ioctl(STDOUT_FILENO,TIOCGWINSZ,&ws) == -1 || ws.ws_col == 0)
+    {
+        return -1;
+    }else{
+        *cols = ws.ws_col;
+        *rows = ws.ws_row;
+        return 0;
+    }
+    
+}
+
+/*checks the editor and lets the app to initialize*/
+void initEditor(){
+    if(getWindowSize(&E.screenrows,&E.screencols) == -1) die("getWindowSize");
+}
+
+/*prints ~ in the start of every line (the commented section is for numbers)*/
 void editorDrawRows() {
   int y;
-  for (y = 0; y < 24; y++) {
-    write(STDOUT_FILENO, "~\r\n", 3);
+//   int x = 1;
+  for (y = 0; y < E.screenrows; y++) {
+    // char buffer[80];
+    // int lengthUsed = sprintf(buffer,"%d",x);
+    // write(STDOUT_FILENO, buffer , lengthUsed);
+    // write(STDOUT_FILENO, "~", 1);
+    // write(STDOUT_FILENO,"\r\n",2);
+    write(STDOUT_FILENO,"~\r\n",3);
+    // x++;
   }
 }
+
 
 //clears the whole screen (terminal)
 void editorRefreshScreen(){
@@ -123,6 +158,7 @@ void editorProcessKeypress(){
 }
 int main(){
     enableRawMode();
+    initEditor();
 
     while (1)
     {
