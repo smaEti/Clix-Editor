@@ -138,12 +138,16 @@ void editorDrawRows() {
   int y;
 //   int x = 1;
   for (y = 0; y < E.screenrows; y++) {
+    write(STDOUT_FILENO,"~",1);
     // char buffer[80];
     // int lengthUsed = sprintf(buffer,"%d",x);
     // write(STDOUT_FILENO, buffer , lengthUsed);
     // write(STDOUT_FILENO, "~", 1);
     // write(STDOUT_FILENO,"\r\n",2);
-    write(STDOUT_FILENO,"~\r\n",3);
+    if (y < E.screenrows - 1)
+    {
+        write(STDOUT_FILENO,"\r\n",2);
+    }
     // x++;
   }
 }
