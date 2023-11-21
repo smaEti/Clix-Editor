@@ -152,36 +152,33 @@ void initEditor(){
 }
 
 /*prints ~ in the start of every line (the commented section is for numbers)*/
-void editorDrawRows() {
+void editorDrawRows(struct abuf *ab) {
   int y;
-//   int x = 1;
+    //appends ~ to the buffer we made
   for (y = 0; y < E.screenrows; y++) {
-    write(STDOUT_FILENO,"~",1);
-    // char buffer[80];
-    // int lengthUsed = sprintf(buffer,"%d",x);
-    // write(STDOUT_FILENO, buffer , lengthUsed);
-    // write(STDOUT_FILENO, "~", 1);
-    // write(STDOUT_FILENO,"\r\n",2);
-    if (y < E.screenrows - 1)
-    {
-        write(STDOUT_FILENO,"\r\n",2);
+    abAppend(ab, "~", 1);
+    if (y < E.screenrows - 1) {
+      abAppend(ab, "\r\n", 2);
     }
-    // x++;
   }
 }
 
 
 //clears the whole screen (terminal)
 void editorRefreshScreen(){
+    struct abuf ab = ABUF_INIT;
     //the 4 means we want to write 4 bytes.
     //\x1b is an escape character and command J is for Erase In display
-    write(STDOUT_FILENO,"\x1b[2J",4);
+    abAppend(&ab, "\x1b[2J", 4);
     // H is for cursor position
-    write(STDOUT_FILENO,"\x1b[H",3);
+    abAppend(&ab, "\x1b[H", 3);
 
-    editorDrawRows();
-    
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    editorDrawRows(&ab);
+
+    abAppend(&ab, "\x1b[H", 3);
+
+    write(STDOUT_FILENO, ab.b, ab.len);
+    abFree(&ab);
 }
 
 /*
