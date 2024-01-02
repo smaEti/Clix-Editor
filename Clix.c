@@ -15,6 +15,8 @@
 //keeping the original termios struct for reseting the changes of terminal when program exits.
 struct editorConfig
 {
+    //cx ,cy is the cursor's position
+    int cx, cy;
     int screenrows;
     int screencols;
     struct termios original_termios;
@@ -150,6 +152,8 @@ void abFree(struct abuf *ab) {
 
 /*checks the editor (to be initalized and gets the cols and rows number) and lets the app to initialize*/
 void initEditor(){
+    E.cx = 0;
+    E.cy = 0;
     if(getWindowSize(&E.screenrows,&E.screencols) == -1) die("getWindowSize");
 }
 
@@ -193,7 +197,11 @@ void editorRefreshScreen(){
 
     editorDrawRows(&ab);
 
-    abAppend(&ab, "\x1b[H", 3);
+    //setting the first position of cursor in screen
+    char buf[32];
+    snprintf(buf,sizeof(buf),"\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+    abAppend(&ab, buf, strlen(buf));
+
     abAppend(&ab, "\x1b[?25h", 6);
 
     write(STDOUT_FILENO, ab.b, ab.len);
@@ -230,4 +238,4 @@ int main(){
     }
     return 0;
 }
-//step 38
+//step 45
