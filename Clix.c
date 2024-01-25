@@ -207,7 +207,22 @@ void editorRefreshScreen(){
     write(STDOUT_FILENO, ab.b, ab.len);
     abFree(&ab);
 }
-
+void editorMoveCursor(char key){
+    switch(key) {
+        case 'a':
+            E.cx--;
+            break;
+        case 'd':
+            E.cx++;
+            break;
+        case 'w':
+            E.cy--;
+            break;
+        case 's':
+            E.cy++;
+            break;
+    }
+}
 /*
 this function processes that if the entered key is a CTRL key or is a regular one (idk what to write)
 and executes the process of it . 
@@ -224,7 +239,12 @@ void editorProcessKeypress(){
             write(STDOUT_FILENO,"\x1b[H",3);
             exit(0);
             break;
-
+        case 'w':
+        case 's':
+        case 'a':
+        case 'd':
+            editorMoveCursor(c);
+            break;
     }
 }
 int main(){
@@ -238,4 +258,4 @@ int main(){
     }
     return 0;
 }
-//step 45
+//step 46
