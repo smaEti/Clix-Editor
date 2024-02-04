@@ -12,6 +12,13 @@
 //returns the ACII code for the combination of the given charachter and the CTRL
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+enum editorKey{
+    ARROW_LEFT = 1000,
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN 
+};
+
 //keeping the original termios struct for reseting the changes of terminal when program exits.
 struct editorConfig
 {
@@ -83,7 +90,7 @@ void enableRawMode(){
 }
 /*
 its a function on the high level of the program for reading the keyPasses*/
-char editorReadKey(){
+int editorReadKey(){
     int nread;
     char c;
 
@@ -91,6 +98,23 @@ char editorReadKey(){
         if (nread == -1 && errno != EAGAIN) die("read");
     }
 
+    if(c == '\x1b'){
+        char seq[3];
+        if(read(STDIN_FILENO,&seq[0],1) != 1) return '\x1b';
+        if(read(STDIN_FILENO,&seq[1],1) != 1) return '\x1b';
+
+        if(seq[0] == '['){
+            switch(seq[1]){
+                case 'A' : return ARROW_UP;
+                case 'B' : return ARROW_DOWN;
+                case 'C' : return ARROW_RIGHT;
+                case 'D' : return ARROW_LEFT;
+            }
+        }
+        return '\x1b';
+    }else{
+        return c;
+    }
     return c;
 }
 
@@ -207,19 +231,27 @@ void editorRefreshScreen(){
     write(STDOUT_FILENO, ab.b, ab.len);
     abFree(&ab);
 }
-void editorMoveCursor(char key){
+void editorMoveCursor(int key){
     switch(key) {
-        case 'a':
+        case ARROW_LEFT:
+        if(E.cx != 0){
             E.cx--;
+        }
             break;
-        case 'd':
+        case ARROW_RIGHT:
+        if(E.cx != E.screencols - 1){
             E.cx++;
+        }
             break;
-        case 'w':
+        case ARROW_UP:
+        if(E.cy != 0){
             E.cy--;
+        }
             break;
-        case 's':
+        case ARROW_DOWN:
+        if(E.cy != E.screenrows -1){
             E.cy++;
+        }
             break;
     }
 }
@@ -228,7 +260,7 @@ this function processes that if the entered key is a CTRL key or is a regular on
 and executes the process of it . 
 */
 void editorProcessKeypress(){
-    char c = editorReadKey();
+    int c = editorReadKey();
 
     switch(c){
         case CTRL_KEY('q'):
@@ -239,10 +271,10 @@ void editorProcessKeypress(){
             write(STDOUT_FILENO,"\x1b[H",3);
             exit(0);
             break;
-        case 'w':
-        case 's':
-        case 'a':
-        case 'd':
+        case ARROW_UP:
+        case ARROW_DOWN:
+        case ARROW_LEFT:
+        case ARROW_RIGHT:
             editorMoveCursor(c);
             break;
     }
@@ -258,4 +290,4 @@ int main(){
     }
     return 0;
 }
-//step 46
+//step 50
