@@ -129,19 +129,18 @@ int editorReadKey(){
                     case 'D' : return ARROW_LEFT;
                     case 'H' : return HOME_KEY;
                     case 'F' : return END_KEY;
+                    }
                 }
-            }else if (seq[0] == 'O'){
+        }else if (seq[0] == 'O'){
                 switch (seq[1]){
                     case 'H' : return HOME_KEY;
                     case 'F' : return END_KEY;    
                 }
-            }
         }
         return '\x1b';
     }else{
         return c;
     }
-    return c;
 }
 
 int getCursorPosition(int *rows, int *cols) {
