@@ -354,7 +354,7 @@ void editorRefreshScreen() {
   struct abuf ab = ABUF_INIT;
   
   abAppend(&ab, "\x1b[?25l", 6);
-  // the 4 means we want to write 4 bytes.
+  // the 6 means we want to write 6 bytes.
   //\x1b is an escape character and command J is for Erase In display
   //  abAppend(&ab, "\x1b[2J", 4);
   //  H is for cursor position
