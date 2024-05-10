@@ -395,7 +395,8 @@ void editorMoveCursor(int key) {
   case ARROW_LEFT:
     if (E.cx != 0) {
       E.cx--;
-    } else if (E.cy > 0) { //Allow user to use <- at beginning of the line to move to end of previous line
+    } else if (E.cy > 0) { // Allow user to use <- at beginning of the line to
+                           // move to end of previous line
       E.cy--;
       E.cx = E.row[E.cy].size;
     }
@@ -403,6 +404,9 @@ void editorMoveCursor(int key) {
   case ARROW_RIGHT:
     if (row && E.cx < row->size) {
       E.cx++;
+    } else if (row && E.cx == row->size) { //allow the user to press → at the end of a line to go to the beginning of the next line.
+      E.cy++;
+      E.cx = 0;
     }
     break;
   case ARROW_UP:
