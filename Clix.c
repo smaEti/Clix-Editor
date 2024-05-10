@@ -42,6 +42,7 @@ struct editorConfig {
   // cx ,cy is the cursor's position
   int cx, cy;
   int rowoff;
+  int coloff;
   int screenrows;
   int screencols;
   int numrows;
@@ -252,7 +253,8 @@ void editorOpen(char *filename) {
   char *line = NULL;
   size_t linecap = 0;
   ssize_t linelen;
-  //reads every row of file and calls editorAppendRow for everyline to append the row in buffer
+  // reads every row of file and calls editorAppendRow for everyline to append
+  // the row in buffer
   while ((linelen = getline(&line, &linecap, fp)) != -1) {
     while (linelen > 0 &&
            (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
@@ -288,19 +290,27 @@ void initEditor() {
   E.cx = 0;
   E.cy = 0;
   E.rowoff = 0;
+  E.coloff = 0;
   E.numrows = 0;
   E.row = NULL;
   if (getWindowSize(&E.screenrows, &E.screencols) == -1)
     die("getWindowSize");
 }
 
-/* checks if the cursor is going out of the window and adds the value to rowoff for scrolling */
+/* checks if the cursor is going out of the window and adds the value to rowoff
+ * for scrolling */
 void editorScroll() {
   if (E.cy < E.rowoff) {
     E.rowoff = E.cy;
   }
   if (E.cy >= E.rowoff + E.screenrows) {
     E.rowoff = E.cy - E.screenrows + 1;
+  }
+  if (E.cx < E.coloff) {
+    E.coloff = E.cx;
+  }
+  if (E.cx >= E.coloff + E.screencols) {
+    E.coloff = E.cx - E.screencols + 1;
   }
 }
 
@@ -334,10 +344,16 @@ void editorDrawRows(struct abuf *ab) {
         abAppend(ab, "~", 1);
       }
     } else {
-      int len = E.row[filerow].size;
+      int len = E.row[filerow].size - E.coloff;
+      /*when subtracting E.coloff from the length, len can now be a negative
+       number, meaning the user scrolled horizontally past the end of the line.
+       In that case, we set len to 0 so that nothing is displayed on that
+       line.*/
+      if (len < 0)
+        len = 0;
       if (len > E.screencols)
         len = E.screencols;
-      abAppend(ab, E.row[filerow].chars, len);
+      abAppend(ab, &E.row[filerow].chars[E.coloff], len);
     }
 
     abAppend(ab, "\x1b[K", 3);
@@ -352,7 +368,7 @@ void editorRefreshScreen() {
   editorScroll();
 
   struct abuf ab = ABUF_INIT;
-  
+
   abAppend(&ab, "\x1b[?25l", 6);
   // the 6 means we want to write 6 bytes.
   //\x1b is an escape character and command J is for Erase In display
@@ -364,7 +380,7 @@ void editorRefreshScreen() {
 
   // setting the first position of cursor in screen
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, E.cx + 1);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.cx + E.coloff) + 1);
   abAppend(&ab, buf, strlen(buf));
 
   abAppend(&ab, "\x1b[?25h", 6);
@@ -380,9 +396,7 @@ void editorMoveCursor(int key) {
     }
     break;
   case ARROW_RIGHT:
-    if (E.cx != E.screencols - 1) {
       E.cx++;
-    }
     break;
   case ARROW_UP:
     if (E.cy != 0) {
