@@ -395,6 +395,9 @@ void editorMoveCursor(int key) {
   case ARROW_LEFT:
     if (E.cx != 0) {
       E.cx--;
+    } else if (E.cy > 0) { //Allow user to use <- at beginning of the line to move to end of previous line
+      E.cy--;
+      E.cx = E.row[E.cy].size;
     }
     break;
   case ARROW_RIGHT:
@@ -413,8 +416,8 @@ void editorMoveCursor(int key) {
     }
     break;
   }
-  /*set E.cx to the end of that line if E.cx is to the right of the end of that line.
-  we consider a NULL line to be of length 0.*/
+  /*set E.cx to the end of that line if E.cx is to the right of the end of that
+  line. we consider a NULL line to be of length 0.*/
   row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
   int rowlen = row ? row->size : 0;
   if (E.cx > rowlen) {
@@ -474,4 +477,4 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
-// step 77
+// step 79
