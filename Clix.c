@@ -413,6 +413,13 @@ void editorMoveCursor(int key) {
     }
     break;
   }
+  /*set E.cx to the end of that line if E.cx is to the right of the end of that line.
+  we consider a NULL line to be of length 0.*/
+  row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
+  int rowlen = row ? row->size : 0;
+  if (E.cx > rowlen) {
+    E.cx = rowlen;
+  }
 }
 /*
 this function processes that if the entered key is a CTRL key or is a regular
