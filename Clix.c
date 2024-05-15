@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #define CLIX_VERSION "0.0.1"
-
+#define CLIX_TAB_STOP 8
 // returns the ACII code for the combination of the given charachter and the
 // CTRL
 #define CTRL_KEY(k) ((k)&0x1f)
@@ -32,7 +32,9 @@ enum editorKey {
 // stands for Editor's row
 typedef struct erow {
   int size;
+  int rsize;
   char *chars;
+  char *render;
 } erow;
 
 // keeping the original termios struct for reseting the changes of terminal when
@@ -229,16 +231,54 @@ int getWindowSize(int *rows, int *cols) {
   }
 }
 /*
+uses the chars string of an erow to fill in the contents of the render string.
+it copies each character from chars to render.
+*/
+void editorUpdateRow(erow *row) {
+  int tabs = 0;
+  int j;
+  // loops through the chars of the row and count the tabs in order to know how
+  // much memory to allocate for render
+  for (j = 0; j < row->size; j++)
+    if (row->chars[j] == '\t')
+      tabs++;
+
+  free(row->render);
+  row->render = malloc(row->size + tabs * (CLIX_TAB_STOP - 1) + 1);
+
+  int idx = 0;
+  for (j = 0; j < row->size; j++) {
+    if (row->chars[j] == '\t') {
+      row->render[idx++] = ' ';
+      while (idx % CLIX_TAB_STOP != 0)
+        row->render[idx++] = ' ';
+    } else {
+      row->render[idx++] = row->chars[j];
+    }
+  }
+
+  row->render[idx] = '\0';
+  // idx contains the number of characters we copied into row->render
+  row->rsize = idx;
+}
+
+/*
 allocates string for each row and writes the each row in it;
 */
 void editorAppendRow(char *s, size_t len) {
   // allocating the rows
   E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
+
   int at = E.numrows;
   E.row[at].size = len;
   E.row[at].chars = malloc(len + 1);
   memcpy(E.row[at].chars, s, len);
+
   E.row[at].chars[len] = '\0';
+  E.row[at].rsize = 0;
+  E.row[at].render = NULL;
+  editorUpdateRow(&E.row[at]);
+
   E.numrows++;
 }
 
@@ -343,7 +383,7 @@ void editorDrawRows(struct abuf *ab) {
         abAppend(ab, "~", 1);
       }
     } else {
-      int len = E.row[filerow].size - E.coloff;
+      int len = E.row[filerow].rsize - E.coloff;
       /*when subtracting E.coloff from the length, len can now be a negative
        number, meaning the user scrolled horizontally past the end of the line.
        In that case, we set len to 0 so that nothing is displayed on that
@@ -352,7 +392,7 @@ void editorDrawRows(struct abuf *ab) {
         len = 0;
       if (len > E.screencols)
         len = E.screencols;
-      abAppend(ab, &E.row[filerow].chars[E.coloff], len);
+      abAppend(ab, &E.row[filerow].render[E.coloff], len);
     }
 
     abAppend(ab, "\x1b[K", 3);
@@ -404,7 +444,10 @@ void editorMoveCursor(int key) {
   case ARROW_RIGHT:
     if (row && E.cx < row->size) {
       E.cx++;
-    } else if (row && E.cx == row->size) { //allow the user to press → at the end of a line to go to the beginning of the next line.
+    } else if (row &&
+               E.cx ==
+                   row->size) { // allow the user to press → at the end of a
+                                // line to go to the beginning of the next line.
       E.cy++;
       E.cx = 0;
     }
@@ -481,4 +524,4 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
-// step 80
+// step 85
